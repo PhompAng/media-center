@@ -1,0 +1,11 @@
+{
+  "presets": [
+    "react-app"
+  ],
+  "plugins": [
+    "transform-object-rest-spread",
+    ["babel-plugin-root-import", {
+      "rootPathSuffix": "src"
+    }]
+  ]
+}
