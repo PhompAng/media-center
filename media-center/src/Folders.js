@@ -1,25 +1,34 @@
 import { connect } from 'react-redux'
-import { RecyclerListView, DataProvider } from 'recyclerlistview'
+import { RecyclerListView, DataProvider } from 'recyclerlistview/web'
 import { Row } from 'reactstrap'
 import React, { Component } from 'react'
+import { LayoutUtil } from '~/common/utils/LayoutUtil'
 
 import FolderCard from '~/component/FolderCard'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSpinnerThird } from '@fortawesome/pro-light-svg-icons'
 
 import styles from './Folders.css'
-import { cd } from '~/redux/action'
+import { cd, loadMore } from '~/redux/action'
 import PropTypes from 'prop-types'
 
 const mapStateToProp = state => {
   return {
     dir: state.currentDir,
-    contents: state.contents
+    contents: state.contents,
+    pageInformation: state.pageInformation
   }
 }
 
 const mapDispatchToProp = dispatch => {
   return {
     onCd: (currentDir, dir) => { dispatch(cd(currentDir + '/' + dir))},
-    onUp: (currentDir) => { dispatch(cd(currentDir.split('/').slice(0, -1).join('/'))) }
+    onUp: (currentDir) => { dispatch(cd(currentDir.split('/').slice(0, -1).join('/'))) },
+    onLoadMore: (currentDir, pageInformation) => {
+      // TODO check last page
+      console.log("load more " + currentDir)
+      dispatch(loadMore(currentDir, pageInformation))
+    }
   }
 }
 
@@ -27,75 +36,78 @@ class Folders extends Component {
   static protoType = {
     dir: PropTypes.string.isRequired,
     contents: PropTypes.array,
+    pageInformation: PropTypes.object.isRequired,
     onCd: PropTypes.func.isRequired,
-    onUp: PropTypes.func.isRequired
+    onUp: PropTypes.func.isRequired,
+    onLoadMore: PropTypes.func.isRequired,
+    dataProvider: PropTypes.object,
+    layoutProvider: PropTypes.object
+  }
+
+  static getDerivedStateFromProps (nextProps, prevState) {
+    return {
+      dataProvider: prevState.dataProvider.cloneWithRows([{type: 'special'},...nextProps.contents])
+    }
   }
 
   constructor(props) {
     super(props)
+    let dataProvider = new DataProvider((r1, r2) => {
+      return r1 !== r2;
+    })
     this.state = {
-      dataProvider: new DataProvider((r1, r2) => {
-        return r1 !== r2;
-      })
+      dataProvider: dataProvider,
+      layoutProvider: LayoutUtil.getLayoutProvider(window.innerWidth, 0)
     }
+    this.rowRenderer = this.rowRenderer.bind(this)
   }
 
   rowRenderer = (type, content) => {
-    if (type === 'folder') {
+    if (content.type === 'folder') {
       return (
         <FolderCard
           key={content.name}
           onClick={this.props.onCd.bind(this, this.props.dir, content.name)}
           title={content.name}
           type={content.type}
+          dimensions={content.dimensions}
           imageUrl={content.image ? 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name + '/' + content.image : null}></FolderCard>
       )
-    } else if (type === 'file') {
+    } else if (content.type === 'file') {
       return (
         <FolderCard
           key={content.name}
           onClick={() => {}}
           title={content.name}
           type={content.type}
-          imageUrl={'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name}></FolderCard>
+          dimensions={content.dimensions}
+          imageUrl={content.mime.mime.split('/')[0] === 'image' ? 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name : null}></FolderCard>
+      )
+    } else if (content.type === 'special') {
+      return (
+        <FolderCard
+          onClick={this.props.onUp.bind(this, this.props.dir)}
+          title="..."
+          type="special"></FolderCard>
       )
     } else {
       return null
     }
   }
 
-  render () {
-    const contents = this.props.contents.map(content => {
-      if (content.type === 'folder') {
-        return (
-          <FolderCard
-            key={content.name}
-            onClick={this.props.onCd.bind(this, this.props.dir, content.name)}
-            title={content.name}
-            type={content.type}
-            imageUrl={content.image ? 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name + '/' + content.image : null}></FolderCard>
-        )
-      } else if (content.type === 'file') {
-        return (
-          <FolderCard
-            key={content.name}
-            onClick={() => {}}
-            title={content.name}
-            type={content.type}
-            imageUrl={'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name}></FolderCard>
-        )
-      } else {
-        return null
-      }
-    })
+  loadMore = () => {
+    this.props.onLoadMore(this.props.dir, this.props.pageInformation)
+  }
 
+  render () {
     return (
       <Row className={styles.folders}>
-        <FolderCard
-          onClick={this.props.onUp.bind(this, this.props.dir)}
-          title="..."
-          type="special"></FolderCard>
-        { contents }
+        <RecyclerListView
+          useWindowScroll={true}
+          layoutProvider={this.state.layoutProvider}
+          dataProvider={this.state.dataProvider}
+          rowRenderer={this.rowRenderer}
+          onEndReached={this.loadMore} />
       </Row>
     )
   }

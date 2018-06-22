@@ -8,6 +8,22 @@ import { HOME_DIR_KEY } from '~/env';
 import readChunk from 'read-chunk';
 import fileType from 'file-type';
 
+var { promisify } = require('util')
+var sizeOf = promisify(require('image-size'))
+
+async function getDimension (file) {
+  try {
+    const dimensions = await sizeOf(file)
+    return dimensions
+  } catch (err) {
+    console.error(err)
+    return {
+      width: 0,
+      height: 0
+    }
+  }
+}
+
 const calculatePage = (pageNumber, pageSize, contentSize) => {
   let page = {
     pageInformation: {
@@ -66,10 +82,10 @@ export default (app) => {
     }
     res.json(result)
   })
-  app.post('/list', function (req, res) {
+  app.post('/list', async function (req, res) {
     let querys = req.query
     let pageNumber = querys['page.number'] ? querys['page.number'] : 1
-    let pageSize = querys['page.size'] ? querys['page.size'] : 30
+    let pageSize = querys['page.size'] ? querys['page.size'] : 50
 
     let dir = req.body.dir
     console.log(dir)
@@ -82,14 +98,14 @@ export default (app) => {
         entities: []
       }
     }
-    let entitise = contents
+    let entitise = await Promise.all(contents
       .map(name => {
-        if (isDirectory(join(dir, name))) {
+        if (isDirectory(join(dir, name)) && !name.startsWith('.')) {
           return {
             type: 'folder',
             name: name,
           }
-        } else if (isFile(join(dir, name))) {
+        } else if (isFile(join(dir, name)) && !name.startsWith('.')) {
           return {
             type: 'file',
             name: name,
@@ -115,6 +131,22 @@ export default (app) => {
         }
       })
       .filter(content => !(content.type === 'file' && content.mime == null))
+      .map(async content => {
+        if (content.type === 'file' && content.mime.mime.split('/')[0] === 'image') {
+          return {
+            ...content,
+            dimensions: await getDimension(join(dir, content.name))
+          }
+        } else if (content.image != null) {
+          return {
+            ...content,
+            dimensions: await getDimension(join(dir, content.name, content.image))
+          }
+        } else {
+          return content
+        }
+      })
+    )
 
     result.page.totalNumberOfEntities = entitise.length
     result.page.entities = entitise
