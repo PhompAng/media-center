@@ -1,3 +1,4 @@
+import { join } from 'path'
 import express from 'express'
 
 import { _, HOME_DIR_KEY, HOME_DIR } from '~/env'
@@ -8,6 +9,7 @@ import storage from 'node-persist'
 import cors from 'cors'
 
 (async () => {
+  var appRoot = require('app-root-path')
   await storage.init()
   await storage.set(HOME_DIR_KEY, HOME_DIR)
 
@@ -15,6 +17,7 @@ import cors from 'cors'
   app.use(cors())
   app.use(bodyParser.json())
   app.use('/static', express.static('/'))
+  app.use('/thumbnail', express.static(join(appRoot.toString(), '.thumb')))
 
   root(app)
 

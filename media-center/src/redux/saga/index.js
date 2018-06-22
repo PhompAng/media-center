@@ -42,7 +42,7 @@ export function* cd(action) {
     yield put({type: actionType.SET_CURRENT_DIR, payload: action.payload})
     yield call(fetchList, fetchContents(action.payload, {
       number: 1,
-      size: 15
+      size: 30
     }))
   } catch (err) {
 

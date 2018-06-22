@@ -2,11 +2,10 @@ import { connect } from 'react-redux'
 import { RecyclerListView, DataProvider } from 'recyclerlistview/web'
 import { Row } from 'reactstrap'
 import React, { Component } from 'react'
+
 import { LayoutUtil } from '~/common/utils/LayoutUtil'
 
 import FolderCard from '~/component/FolderCard'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinnerThird } from '@fortawesome/pro-light-svg-icons'
 
 import styles from './Folders.css'
 import { cd, loadMore } from '~/redux/action'
@@ -16,7 +15,8 @@ const mapStateToProp = state => {
   return {
     dir: state.currentDir,
     contents: state.contents,
-    pageInformation: state.pageInformation
+    pageInformation: state.pageInformation,
+    totalNumberOfPages: state.totalNumberOfPages
   }
 }
 
@@ -25,7 +25,6 @@ const mapDispatchToProp = dispatch => {
     onCd: (currentDir, dir) => { dispatch(cd(currentDir + '/' + dir))},
     onUp: (currentDir) => { dispatch(cd(currentDir.split('/').slice(0, -1).join('/'))) },
     onLoadMore: (currentDir, pageInformation) => {
-      // TODO check last page
       console.log("load more " + currentDir)
       dispatch(loadMore(currentDir, pageInformation))
     }
@@ -37,6 +36,7 @@ class Folders extends Component {
     dir: PropTypes.string.isRequired,
     contents: PropTypes.array,
     pageInformation: PropTypes.object.isRequired,
+    totalNumberOfPages: PropTypes.number.isRequired,
     onCd: PropTypes.func.isRequired,
     onUp: PropTypes.func.isRequired,
     onLoadMore: PropTypes.func.isRequired,
@@ -62,6 +62,21 @@ class Folders extends Component {
     this.rowRenderer = this.rowRenderer.bind(this)
   }
 
+  getImageUrl = (content) => {
+    if (content.type === 'folder') {
+      return content.image ? 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name + '/' + content.image : null
+    } else if (content.type === 'file') {
+      switch (content.mime.mime.split('/')[0]) {
+      case 'image':
+        return 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name
+      case 'video':
+        return 'http://127.0.0.1:3001/thumbnail/' + content.image
+      default:
+        return null
+      }
+    }
+  }
+
   rowRenderer = (type, content) => {
     if (content.type === 'folder') {
       return (
@@ -71,7 +86,7 @@ class Folders extends Component {
           title={content.name}
           type={content.type}
           dimensions={content.dimensions}
-          imageUrl={content.image ? 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name + '/' + content.image : null}></FolderCard>
+          imageUrl={this.getImageUrl(content)}></FolderCard>
       )
     } else if (content.type === 'file') {
       return (
@@ -81,7 +96,7 @@ class Folders extends Component {
           title={content.name}
           type={content.type}
           dimensions={content.dimensions}
-          imageUrl={content.mime.mime.split('/')[0] === 'image' ? 'http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name : null}></FolderCard>
+          imageUrl={this.getImageUrl(content)}></FolderCard>
       )
     } else if (content.type === 'special') {
       return (
@@ -96,7 +111,9 @@ class Folders extends Component {
   }
 
   loadMore = () => {
-    this.props.onLoadMore(this.props.dir, this.props.pageInformation)
+    if (this.props.pageInformation.number < this.props.totalNumberOfPages) {
+      this.props.onLoadMore(this.props.dir, this.props.pageInformation)
+    }
   }
 
   render () {

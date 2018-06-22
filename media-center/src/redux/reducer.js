@@ -6,7 +6,7 @@ const initialState = {
   contents: [],
   pageInformation: {
     number: 1,
-    size: 15
+    size: 30
   },
   totalNumberOfPages: 1
 }

@@ -1,15 +1,18 @@
-import { join } from 'path';
-import fs from 'fs-extra';
-import isThere from 'is-there';
-import storage from 'node-persist';
+import { join } from 'path'
+import fs from 'fs-extra'
+import isThere from 'is-there'
+import storage from 'node-persist'
 
-import { HOME_DIR_KEY } from '~/env';
+import { HOME_DIR_KEY } from '~/env'
 
-import readChunk from 'read-chunk';
-import fileType from 'file-type';
+import readChunk from 'read-chunk'
+import fileType from 'file-type'
 
 var { promisify } = require('util')
 var sizeOf = promisify(require('image-size'))
+const uuidv4 = require('uuid/v4')
+var appRoot = require('app-root-path')
+var ffmpeg = require('fluent-ffmpeg')
 
 async function getDimension (file) {
   try {
@@ -74,6 +77,35 @@ const getFileType = file => {
   }
 }
 
+const buildThumbnail = async (file) => {
+  let thumbnail = await storage.get(file)
+  if (thumbnail != null) {
+    console.log(thumbnail)
+    return thumbnail + '.png'
+  }
+  try {
+    const uid = uuidv4()
+    await new Promise((resolve, reject) => {
+      let command = ffmpeg(file).screenshots({
+        timestamps: ['10%'],
+        filename: uid,
+        folder: join(appRoot.toString(), '.thumb'),
+        size: '640x360'
+      })
+      command.on('filenames', function(filenames) {
+        console.log('Will generate ' + filenames.join(', '))
+      })
+      command.on('end', resolve)
+      command.on('error', reject)
+    })
+    await storage.set(file, uid)
+    return uid + '.png'
+  } catch (err) {
+    console.log(err)
+    return null
+  }
+}
+
 export default (app) => {
   app.get('/init', async function (req, res) {
     const homeDir = await storage.get(HOME_DIR_KEY)
@@ -85,7 +117,7 @@ export default (app) => {
   app.post('/list', async function (req, res) {
     let querys = req.query
     let pageNumber = querys['page.number'] ? querys['page.number'] : 1
-    let pageSize = querys['page.size'] ? querys['page.size'] : 50
+    let pageSize = querys['page.size'] ? querys['page.size'] : 30
 
     let dir = req.body.dir
     console.log(dir)
@@ -137,6 +169,12 @@ export default (app) => {
             ...content,
             dimensions: await getDimension(join(dir, content.name))
           }
+        } else if (content.type === 'file' && content.mime.mime.split('/')[0] === 'video') {
+          return {
+            ...content,
+            dimensions: { width: 640, height: 360 },
+            image: await buildThumbnail(join(dir, content.name))
+          }
         } else if (content.image != null) {
           return {
             ...content,
@@ -153,6 +191,7 @@ export default (app) => {
     res.json(result)
   })
   app.get('/test', function (req, res) {
+    console.log(__dirname)
     res.json({type: getFileType('/Users/phompang/Downloads/Marconi\ Union\ -\ Weightless\ \(Official\ Extended\ Version\).mp4')})
   })
 }
