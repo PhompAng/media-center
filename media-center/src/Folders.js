@@ -22,10 +22,13 @@ const mapStateToProp = state => {
 
 const mapDispatchToProp = dispatch => {
   return {
-    onCd: (currentDir, dir) => { dispatch(cd(currentDir + '/' + dir))},
-    onUp: (currentDir) => { dispatch(cd(currentDir.split('/').slice(0, -1).join('/'))) },
+    onCd: (currentDir, dir) => {
+      dispatch(cd(currentDir + '/' + dir))
+    },
+    onUp: (currentDir) => {
+      dispatch(cd(currentDir.split('/').slice(0, -1).join('/')))
+    },
     onLoadMore: (currentDir, pageInformation) => {
-      console.log("load more " + currentDir)
       dispatch(loadMore(currentDir, pageInformation))
     }
   }
@@ -77,6 +80,13 @@ class Folders extends Component {
     }
   }
 
+  onFileClick = (content) => {
+    console.log(content)
+    if (content.mime.mime.split('/')[0] === 'video') {
+      window.open('vlc://http://127.0.0.1:3001/static' + this.props.dir + '/' + content.name, '_self')
+    }
+  }
+
   rowRenderer = (type, content) => {
     if (content.type === 'folder') {
       return (
@@ -92,7 +102,7 @@ class Folders extends Component {
       return (
         <FolderCard
           key={content.name}
-          onClick={() => {}}
+          onClick={this.onFileClick.bind(this, content)}
           title={content.name}
           type={content.type}
           dimensions={content.dimensions}

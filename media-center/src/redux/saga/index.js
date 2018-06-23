@@ -1,4 +1,4 @@
-import { call, put, takeEvery } from 'redux-saga/effects'
+import { call, put, takeEvery, all } from 'redux-saga/effects'
 
 import * as actionType from '~/redux/constant/action-types'
 import { fetchContents } from '~/redux/action'
@@ -86,10 +86,10 @@ export function* loadMoreAsync() {
 }
 
 export default function* rootSaga() {
-  yield [
+  yield all([
     initAsync(),
     fetchListAsync(),
     cdAsync(),
     loadMoreAsync()
-  ]
+  ])
 }

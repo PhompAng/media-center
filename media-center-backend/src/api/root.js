@@ -8,11 +8,11 @@ import { HOME_DIR_KEY } from '~/env'
 import readChunk from 'read-chunk'
 import fileType from 'file-type'
 
-var { promisify } = require('util')
+import { promisify } from 'util'
+import uuidv4 from 'uuid/v4'
+import appRoot from 'app-root-path'
+import ffmpeg from 'fluent-ffmpeg'
 var sizeOf = promisify(require('image-size'))
-const uuidv4 = require('uuid/v4')
-var appRoot = require('app-root-path')
-var ffmpeg = require('fluent-ffmpeg')
 
 async function getDimension (file) {
   try {
