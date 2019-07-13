@@ -1,12 +1,12 @@
 import { connect } from 'react-redux'
 import { Container, Row } from 'reactstrap'
+import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 
-import Bar from '~/ui/bar'
+import Bar from './bar'
+import Folders from './folders'
+
 import { fetchInit } from '~/redux/action'
-import Folders from './Folders'
-import './App.css'
-import PropTypes from 'prop-types'
 
 const mapDispatchToProp = dispatch => {
   return {

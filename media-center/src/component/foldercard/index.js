@@ -1,10 +1,11 @@
 import classNames from 'classnames/bind'
+import ImageWorker from 'react-worker-image';
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
+
 import folder from './folder.jpg'
-import styles from './FolderCard.scss'
-import ImageWorker from 'react-worker-image';
+import styles from './styles.scss'
 
 let cx = classNames.bind(styles)
 

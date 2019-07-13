@@ -92,7 +92,7 @@ const buildThumbnail = async (file) => {
         folder: join(appRoot.toString(), '.thumb'),
         size: '640x360'
       })
-      command.on('filenames', function(filenames) {
+      command.on('filenames', function (filenames) {
         console.log('Will generate ' + filenames.join(', '))
       })
       command.on('end', resolve)
@@ -135,12 +135,12 @@ export default (app) => {
         if (isDirectory(join(dir, name)) && !name.startsWith('.')) {
           return {
             type: 'folder',
-            name: name,
+            name: name
           }
         } else if (isFile(join(dir, name)) && !name.startsWith('.')) {
           return {
             type: 'file',
-            name: name,
+            name: name
           }
         } else {
           return null

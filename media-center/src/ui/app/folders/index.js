@@ -4,10 +4,8 @@ import { Row } from 'reactstrap'
 import React, { Component } from 'react'
 
 import { LayoutUtil } from '~/common/utils/LayoutUtil'
-
-import FolderCard from '~/component/FolderCard'
-
-import styles from './Folders.css'
+import FolderCard from '~/component/foldercard'
+import styles from './styles.css'
 import { cd, loadMore } from '~/redux/action'
 import PropTypes from 'prop-types'
 
